@@ -1,0 +1,191 @@
+openapi: 3.0.3
+
+info:
+  title: Sentiment Analyzer API
+  description: >
+    API сервиса «Анализатор отзывов»: определяет тональность текста отзыва
+    (положительная, нейтральная, отрицательная), возвращает уровень
+    уверенности модели и позволяет получить сохраненные результаты анализа.
+  version: 1.0.0
+
+servers:
+  - url: https://example.com/api/v1
+    description: Условный сервер (реальный backend в работе не требуется)
+
+paths:
+  /analysis:
+    post:
+      summary: Проанализировать отзыв
+      description: >
+        Отправляет текст отзыва на анализ и определяет его тональность.
+        Это основная ИИ-функция сервиса.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisRequest'
+      responses:
+        '200':
+          description: Анализ выполнен успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+              example:
+                id: 123
+                sentiment: positive
+                confidence: 0.94
+                modelVersion: v1.2
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: EMPTY_TEXT
+                message: Text must not be empty
+        '503':
+          description: Модель временно недоступна
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: MODEL_UNAVAILABLE
+                message: Sentiment model is temporarily unavailable
+
+  /analysis/{id}:
+    get:
+      summary: Получить результат анализа
+      description: Возвращает сохраненный результат анализа отзыва по его идентификатору.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор результата анализа
+          schema:
+            type: integer
+          example: 123
+      responses:
+        '200':
+          description: Результат найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '404':
+          description: Результат не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: ANALYSIS_NOT_FOUND
+                message: Analysis with id 123 was not found
+
+  /models:
+    get:
+      summary: Получить список доступных моделей
+      description: Возвращает модели тональности, доступные в сервисе, и их версии.
+      parameters:
+        - name: activeOnly
+          in: query
+          required: false
+          description: Вернуть только активные модели
+          schema:
+            type: boolean
+          example: true
+      responses:
+        '200':
+          description: Список моделей получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelInfo'
+        '500':
+          description: Внутренняя ошибка сервиса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INTERNAL_ERROR
+                message: Internal server error
+
+components:
+  schemas:
+    AnalysisRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Текст отзыва для анализа
+          example: Отличный сервис, все понравилось!
+        language:
+          type: string
+          description: Код языка отзыва (по умолчанию определяется автоматически)
+          example: ru
+
+    AnalysisResult:
+      type: object
+      required:
+        - id
+        - sentiment
+        - confidence
+      properties:
+        id:
+          type: integer
+          description: Идентификатор результата анализа
+          example: 123
+        sentiment:
+          type: string
+          description: Тональность отзыва
+          enum:
+            - positive
+            - neutral
+            - negative
+          example: positive
+        confidence:
+          type: number
+          format: float
+          description: Уверенность модели (от 0 до 1)
+          example: 0.94
+        modelVersion:
+          type: string
+          description: Версия модели, выполнившей анализ
+          example: v1.2
+
+    ModelInfo:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          example: sentiment-russian
+        version:
+          type: string
+          example: v1.2
+        active:
+          type: boolean
+          example: true
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: EMPTY_TEXT
+        message:
+          type: string
+          example: Text must not be empty
