@@ -67,7 +67,7 @@ paths:
           description: Идентификатор результата анализа
           schema:
             type: integer
-          example: 123
+            example: 123
       responses:
         '200':
           description: Результат найден
@@ -75,6 +75,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AnalysisResult'
+        '400':
+          description: Невалидный идентификатор
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_ID
+                message: Path parameter id must be a positive integer
         '404':
           description: Результат не найден
           content:
@@ -96,7 +105,7 @@ paths:
           description: Вернуть только активные модели
           schema:
             type: boolean
-          example: true
+            example: true
       responses:
         '200':
           description: Список моделей получен
@@ -106,6 +115,15 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ModelInfo'
+        '400':
+          description: Невалидный параметр запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_PARAMETER
+                message: Query parameter activeOnly must be a boolean
         '500':
           description: Внутренняя ошибка сервиса
           content:
@@ -155,6 +173,8 @@ components:
           type: number
           format: float
           description: Уверенность модели (от 0 до 1)
+          minimum: 0
+          maximum: 1
           example: 0.94
         modelVersion:
           type: string
